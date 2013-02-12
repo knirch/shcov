@@ -63,15 +63,15 @@ class File:
 
 
 def load(path, script_base = ''):
-    file = pickle.load(open(path))
-    with open(script_base + file.path) as f:
+    sourcefile = pickle.load(open(path))
+    with open(script_base + sourcefile.path) as f:
         m = hashlib.md5()
         m.update(f.read())
         digest = m.digest()
 
     # File has changed
-    if digest != file.digest:
-        file = File(file.path, source_path = script_base + file.path)
+    if digest != sourcefile.digest:
+        sourcefile = File(sourcefile.path, source_path=script_base + sourcefile.path)
 
-    file.source_path = script_base + file.path
-    return file
+    sourcefile.source_path = script_base + sourcefile.path
+    return sourcefile

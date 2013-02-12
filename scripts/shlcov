@@ -211,10 +211,9 @@ class ShcovDataOutput:
         of.write("""</body>
 </html>""")
 
-
-    def handle_one_file(self, file):
-        dirname = os.path.dirname(file.path)
-        basename = os.path.basename(file.path)
+    def handle_one_file(self, sourcefile):
+        dirname = os.path.dirname(sourcefile.path)
+        basename = os.path.basename(sourcefile.path)
         path = self.outpath + "/root/" + os.path.abspath(dirname)
         path = path.replace('//', '/')
 
@@ -245,7 +244,7 @@ class ShcovDataOutput:
   <br>
 """
         self.write_header(of, basename, path_to_helpers,
-                          file.total_lines, file.executed_lines, False)
+                          sourcefile.total_lines, sourcefile.executed_lines, False)
 
         of.write(table)
         nr = 1
@@ -257,7 +256,7 @@ class ShcovDataOutput:
             line = line.replace("<", "&lt;")
             line = line.replace('"', '&quot;')
 
-            if file.lines.has_key(nr) and self.line_is_code(line) or nr>1 and previousLineIsContinued == True and file.lines.has_key(firstLineOfPossibleMultiLineBlock):
+            if sourcefile.lines.has_key(nr) and self.line_is_code(line) or nr>1 and previousLineIsContinued and sourcefile.lines.has_key(firstLineOfPossibleMultiLineBlock):
                 if previousLineIsContinued == True:
                     of.write("""<span class="lineNum">     %5d</span><span class="lineCov">                :  %s</span>\n""" %
                              (nr, line))
