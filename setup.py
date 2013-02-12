@@ -25,7 +25,9 @@ setup(name='shcov',
       author_email="simon.kagstrom@gmail.se",
 
       packages = ['shcov'],
-      scripts = ['scripts/shlcov'],
+      scripts=['scripts/shlcov',
+               'scripts/bash-coverage-collect',
+               ],
       package_data = {'shcov' : ['data/gcov.css', 'data/*.png']},
 
       data_files=[('share/doc/shcov/', ['README']),

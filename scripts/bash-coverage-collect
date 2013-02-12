@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2008,  Simon Kagstrom
+# Copyright (C) 2013-2017,  Thomas Nilsson
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+# Not working:
+#
+# * scripts that change directory
+#   - workarounds; patch bash to always return absolute path for BASH_SOURCE
+#     :(
+
+from __future__ import print_function
+
+import os
+import cPickle as pickle
+import glob
+
+from shcov.file import File
+
+
+def collect_trace(trace, output, script_base='', purge_parsed_file=False):
+    tick_count = 0
+    files = {}
+    path_cache = {}
+    for trace_file in glob.glob(trace + "/*"):
+        with open(trace_file) as f:
+            for line in f:
+                line = line.strip()
+                if "SHCOV:::" not in line:
+                    if tick_count > 1 or tick_count == 0:
+                        pass
+                    continue
+                tick_count = line.count("'")
+
+                (_, cwd, name, line_nr, _) = line.split(":::", 4)
+
+                if (cwd, name) not in path_cache:
+                    fullpath = os.path.abspath(os.path.join(cwd, name))
+                    if not os.path.exists(script_base + fullpath):
+                        print("Skipping %s, not found and most likely a bug" % fullpath)
+                        path_cache[(cwd, name)] = None
+                    else:
+                        path_cache[(cwd, name)] = fullpath
+
+                fullpath = path_cache[(cwd, name)]
+                if not fullpath:
+                    continue
+
+                if fullpath not in files:
+                    files[fullpath] = File(fullpath, source_path=script_base + fullpath)
+
+                files[fullpath].add_to_line(line_nr)
+
+        if purge_parsed_file:
+            os.unlink(trace_file)
+
+    for fh in files:
+        fh = files[fh]
+        outfile = output + fh.path
+        if os.path.exists(outfile):
+            with open(outfile, 'rb') as p:
+                fh.merge_object(pickle.load(p))
+        else:
+            try:
+                os.makedirs(os.path.dirname(outfile))
+            except OSError:
+                pass
+        fh.save(outfile)
+
+
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Collect execution coverage information from trace files.')
+    parser.add_argument('trace_directory',
+                        help='Directory containing trace data.')
+    parser.add_argument('output_directory',
+                        help='Output directory')
+    parser.add_argument('--script-base',
+                        default='/',
+                        help='blabla')
+
+    args = parser.parse_args()
+
+    collect_trace(args.trace_directory, args.output_directory, script_base=args.script_base)

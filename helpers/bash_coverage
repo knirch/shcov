@@ -1,0 +1,5 @@
+mkdir -p /tmp/sh.coverage.bash
+exec 5>$(mktemp /tmp/sh.coverage.bash/cov.XXXXXX)
+BASH_XTRACEFD=5
+export PS4='SHCOV:::$PWD:::${BASH_SOURCE}:::${LINENO}::: SHCOV:'
+set -x
