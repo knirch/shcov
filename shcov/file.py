@@ -14,15 +14,16 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import pickle, os, stat
-
+import pickle
+import os
+import stat
 import hashlib
 
 
-class File:
-    def __init__(self, path, source_path = None):
+class File(object):
+    def __init__(self, path, source_path=None):
         self.path = path
-        if source_path == None:
+        if source_path is None:
             self.source_path = path
         else:
             self.source_path = source_path
@@ -47,9 +48,9 @@ class File:
     def merge_object(self, obj):
         """Merge another object into this """
 
-        for k,v in obj.lines.items():
+        for k, v in obj.lines.items():
             # Add the line numbering from the other
-            if self.lines.has_key(k):
+            if k in self.lines:
                 self.lines[k] = self.lines[k] + v
             else:
                 self.lines[k] = v
@@ -58,11 +59,11 @@ class File:
         line_nr = int(line_nr)
         try:
             self.lines[line_nr] = self.lines[line_nr] + 1
-        except KeyError, e:
+        except KeyError:
             self.lines[line_nr] = 1
 
 
-def load(path, script_base = ''):
+def load(path, script_base=''):
     sourcefile = pickle.load(open(path))
     with open(script_base + sourcefile.path) as f:
         m = hashlib.md5()

@@ -14,7 +14,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import sys
 from distutils.core import setup
 
 setup(name='shcov',
@@ -24,11 +23,11 @@ setup(name='shcov',
       url="http://shcov.googlecode.com",
       author_email="simon.kagstrom@gmail.se",
 
-      packages = ['shcov'],
+      packages=['shcov'],
       scripts=['scripts/shlcov',
                'scripts/bash-coverage-collect',
                ],
-      package_data = {'shcov' : ['data/gcov.css', 'data/*.png']},
+      package_data={'shcov': ['data/gcov.css', 'data/*.png']},
 
       data_files=[('share/doc/shcov/', ['README']),
                   ('share/doc/shcov/', ['COPYING']),
