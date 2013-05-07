@@ -23,6 +23,7 @@ import re
 import getopt
 import shutil
 import pkg_resources
+from operator import attrgetter
 
 import shcov.file
 
@@ -376,7 +377,8 @@ class ShcovDataOutput(object):
 
         self.write_directory_header(of)
 
-        for d in dirs.values():
+        for dir_key in sorted(dirs):
+            d = dirs[dir_key]
             path = "root/" + d.name[1:] + "/index.html"
             path = path.replace('//', '/')
 
@@ -402,7 +404,8 @@ class ShcovDataOutput(object):
 
             self.write_header(of, d.basename, path_to_helpers, d.total_lines, d.executed_lines)
             self.write_directory_header(of)
-            for f in d.files:
+            files = sorted(d.files, key=attrgetter("path"))
+            for f in files:
                 self.write_directory_line(of, path_to_helpers, f.basename + ".html", f.basename,
                                           f.total_lines, f.executed_lines)
             self.write_footer(of)
