@@ -17,6 +17,7 @@ import time
 import re
 import getopt
 import shutil
+from operator import attrgetter
 
 base_dir = os.path.abspath(sys.path[0] + "/../")
 sys.path = [base_dir] + sys.path
@@ -370,7 +371,8 @@ class ShcovDataOutput:
 
         self.write_directory_header(of)
 
-        for directory in dirs.values():
+        for dir_key in sorted(dirs.keys()):
+            directory = dirs[dir_key]
             path = "root/" + directory.name[1:] + "/index.html"
             path = path.replace('//', '/')
 
@@ -396,7 +398,8 @@ class ShcovDataOutput:
 
             self.write_header(of, directory.basename, path_to_helpers, directory.total_lines, directory.executed_lines)
             self.write_directory_header(of)
-            for sourcefile in directory.files:
+            files = sorted(directory.files, key=attrgetter("path"))
+            for sourcefile in files:
                 self.write_directory_line(of, path_to_helpers, sourcefile.basename + ".html", sourcefile.basename,
                                           sourcefile.total_lines, sourcefile.executed_lines)
             self.write_footer(of)
