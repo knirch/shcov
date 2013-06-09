@@ -42,6 +42,9 @@ def convert_bash_to_data(data, output):
 
             cwd = parts[1]
             name = parts[2]
+            if not name:
+                print "Skipping line `%s'" % line
+                continue
             linenr = parts[3]
 
             fullpath = os.path.abspath(os.path.join(cwd, name))
