@@ -1,0 +1,227 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+import os
+import os.path
+import re
+import sys
+from operator import attrgetter
+
+import shcov.file
+
+from lxml.etree import tostring as toxml
+from lxml.builder import E as tag
+
+
+class ShcovFileStats(object):
+    """
+    Object that calculates the number of covered and uncovered lines
+    for a single file.
+
+    It gives you the following members:
+
+    * **sourcefile** The source object that we calc coverage on.
+    * **executed_lines** The number of executed lines.
+    * **total_lines** The total number of lines.
+    """
+    # Regexp to match functions
+    fn_regexp = re.compile("\A(function[\t, ]+)*[a-z,A-Z,_]+[a-z,A-Z,_,0-9]*[\t, ]*\([\t, ]*\)[\t, ]*")
+    brace_regexp = re.compile("\A(\{|\}){1}")
+
+    else_then_done_regexp = re.compile("\A(else|then|fi|done|esac|do|;;){1}\\b")
+    case_nr_regexp = re.compile("\A(([\',\",0-9,a-z,A-Z,_, ]+)|\*{1})\){1}\\Z")
+    heredoc_regexp = re.compile(".*<<-?\'?([a-zA-Z]+)\'?")
+
+    def __init__(self, sourcefile):
+        self.total_lines = 0
+        self.executed_lines = 0
+        self.sourcefile = sourcefile
+
+        with open(sourcefile.source_path) as s:
+            source_data = s.read()
+
+        nr = 1
+        previousLineIsContinued = False
+        heredoc_end = False
+        heredoc_cnt = 0
+        for line in source_data.splitlines():
+            if self.line_is_code(line):
+                self.total_lines += 1
+                if nr in sourcefile.lines or previousLineIsContinued:
+                    self.executed_lines += 1
+
+            if line.endswith("\\"):
+                previousLineIsContinued = True
+            elif ShcovFileStats.heredoc_regexp.match(line):
+                previousLineIsContinued = True
+                heredoc_end = ShcovFileStats.heredoc_regexp.match(line).groups()[0]
+                # If the line has been executed, use the same count
+                # for the rest of the here-document.
+                heredoc_cnt = sourcefile.lines.get(nr, 0)
+            elif heredoc_end:
+                # If the initial line was executed, add the rest of the
+                # here-document lines to executed lines.
+                if nr not in sourcefile.lines and heredoc_cnt > 0:
+                    sourcefile.lines[nr] = heredoc_cnt
+                if line == heredoc_end:
+                    heredoc_end = False
+            else:
+                previousLineIsContinued = False
+
+            nr += 1
+
+    def line_is_code(self, line):
+        tmp = line.strip()
+        if tmp.startswith('#'):
+            return False
+        # Functions and braces
+        if tmp.startswith("function") or ShcovFileStats.fn_regexp.match(tmp) or \
+                ShcovFileStats.brace_regexp.match(tmp):
+            return False
+        # fi/else/esac etc
+        if ShcovFileStats.else_then_done_regexp.match(tmp):
+            return False
+        if ShcovFileStats.case_nr_regexp.match(tmp):
+            return False
+        # Empty string
+        if tmp == "":
+            return False
+        return True
+
+
+class ShcovReport(object):
+    """
+    Class that reads the coverage files and the source code and produces a report in
+    several formats.
+    """
+
+    html_start = """
+<html>
+  <head>
+    <style>
+
+table.files th {
+  text-align:       center;
+  color:            #FFFFFF;
+  background-color: #6688D4;
+  font-family:      sans-serif;
+  font-size:        120%;
+  font-weight:      bold;
+}
+
+table.files td {
+  text-align:       left;
+  padding-left:     10px;
+  padding-right:    20px;
+  color:            #284FA8;
+  background-color: #DAE7FE;
+  font-family:      monospace;
+}
+
+div.meter {
+  display: block;
+  width: 100px;
+  height: 10px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: black;
+  background-color: white;
+}
+
+div.meter > div {
+  display: block;
+  height: 10px;
+  padding: 0px;
+  margin: 0px;
+  background-color: green;
+}
+
+    </style>
+  </head>
+  <body>
+"""
+    html_end = """
+  </body>
+</html>
+"""
+
+    def __init__(self, script_base, data_dir, out_dir):
+        self.script_base = script_base
+        self.data_dir = data_dir
+        self.out_dir = out_dir
+        self.files = []
+        self.file_stats = []
+        self.total_lines = 0
+        self.executed_lines = 0
+
+    def process(self):
+        if not os.path.exists(self.out_dir):
+            os.mkdir(self.out_dir)
+
+        for root, dirs, files in os.walk(self.data_dir, topdown=False):
+            for name in files:
+                path = os.path.join(root, name)
+                try:
+                    sourcefile = shcov.file.load(path, script_base=self.script_base)
+                    self.files.append(sourcefile)
+                    self.file_stats.append(ShcovFileStats(sourcefile))
+                except IOError:
+                    print("IGNORING %s" % path, file=sys.stderr)
+
+        self.file_stats = sorted(self.file_stats, key=attrgetter("sourcefile.path"))
+
+        for filestats in self.file_stats:
+            self.total_lines = self.total_lines + filestats.total_lines
+            self.executed_lines = self.executed_lines + filestats.executed_lines
+
+    def text(self):
+        with open(os.path.join(self.out_dir, "report.txt"), "w+") as f:
+            for filestats in self.file_stats:
+                f.write("%s %f\n" % (filestats.sourcefile.path, (float(filestats.executed_lines) / float(filestats.total_lines)) * 100))
+
+    def flat_html(self):
+        with open(os.path.join(self.out_dir, "index.html"), "w+") as f:
+            f.write(ShcovReport.html_start)
+            table = tag.table(tag.thead(tag.th("Filename"), tag.th("Coverage", colspan="3")), {"class": "files"})
+            tbody = tag.tbody()
+            table.append(tbody)
+            for filestats in self.file_stats:
+                coverage = (float(filestats.executed_lines) / float(filestats.total_lines)) * 100
+                tbody.append(
+                    tag.tr(
+                        tag.td(filestats.sourcefile.path),
+                        tag.td(tag.div(tag.div(style="width: %dpx;" % coverage), {"class": "meter"})),
+                        tag.td("%.1f%%" % coverage),
+                        tag.td("%d/%d lines" % (filestats.executed_lines, filestats.total_lines))))
+
+                # f.write ("%s %f\n" % (filestats.sourcefile.path, (float(filestats.executed_lines) / float(filestats.total_lines)) * 100))
+            f.write(toxml(table, pretty_print=True))
+            f.write(ShcovReport.html_end)
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Create HTML output of shcov data in 'data_directory' in 'output_directory'.")
+    parser.add_argument('--script-base', help='Base path to lookup script source (default: "")', default='')
+    # parser.add_argument('--limit', help='Coverage limits (default: 15,50)', metavar='low,high')
+    parser.add_argument('--format', default="text", help="The output style of the report. (text|flat_html)")
+    parser.add_argument('data_directory')
+    parser.add_argument('output_directory')
+
+    args = parser.parse_args()
+
+    r = ShcovReport(args.script_base, args.data_directory, args.output_directory)
+    r.process()
+
+    # The name of the format is actually a function name to call. So lets look it up and
+    # call it.
+    if not hasattr(r, args.format):
+        print("Invalid format", file=sys.stderr)
+        sys.exit(1)
+    getattr(r, args.format)()
+
+
+if __name__ == "__main__":
+    main()
