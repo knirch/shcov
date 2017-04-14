@@ -16,19 +16,9 @@
 
 import pickle, os, stat
 
-try:
-    import hashlib
-    has_hashlib = True
-except:
-    import md5
-    has_hashlib = False
-
+import hashlib
 from utils import *
 
-def md5_new():
-    if has_hashlib:
-        return hashlib.md5()
-    return md5.new()
 
 class File:
     def __init__(self, path, source_path = None):
@@ -40,7 +30,7 @@ class File:
         self.basename = os.path.basename(path)
         self.lines = {}
 
-        m = md5_new()
+        m = hashlib.md5()
         m.update(read_file(self.source_path))
 
         st = os.lstat(self.source_path)
@@ -86,7 +76,7 @@ def load(path, script_base = ''):
     file = pickle.load(open(path))
     source_file = read_file(script_base + file.path)
 
-    m = md5_new()
+    m = hashlib.md5()
     m.update(source_file)
     digest = m.digest()
 
