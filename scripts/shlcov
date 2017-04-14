@@ -369,24 +369,23 @@ class ShcovDataOutput(object):
             total_lines = total_lines + d.total_lines
             executed_lines = executed_lines + d.executed_lines
 
-        of = open(os.path.join(self.outpath, "index.html"), "w")
-        self.write_header(of, "/", "", total_lines, executed_lines)
+        with open(os.path.join(self.outpath, "index.html"), "w") as of:
+            self.write_header(of, "/", "", total_lines, executed_lines)
 
-        if self.info_sum:
-            print "(%.2f%%) covered" % ((float(executed_lines) / float(total_lines)) * 100.0)
+            if self.info_sum:
+                print "(%.2f%%) covered" % ((float(executed_lines) / float(total_lines)) * 100.0)
 
-        self.write_directory_header(of)
+            self.write_directory_header(of)
 
-        for dir_key in sorted(dirs):
-            d = dirs[dir_key]
-            path = "root/" + d.name[1:] + "/index.html"
-            path = path.replace('//', '/')
+            for dir_key in sorted(dirs):
+                d = dirs[dir_key]
+                path = "root/" + d.name[1:] + "/index.html"
+                path = path.replace('//', '/')
 
-            self.write_directory_line(of, "", path, d.name,
-                                      d.total_lines, d.executed_lines)
+                self.write_directory_line(of, "", path, d.name,
+                                          d.total_lines, d.executed_lines)
 
-        self.write_footer(of)
-        of.close()
+            self.write_footer(of)
 
         # Create indices in each dir
         for d in dirs.values():
@@ -400,16 +399,14 @@ class ShcovDataOutput(object):
             except OSError:
                 pass
 
-            of = open(os.path.join(path, "index.html"), "w")
-
-            self.write_header(of, d.basename, path_to_helpers, d.total_lines, d.executed_lines)
-            self.write_directory_header(of)
-            files = sorted(d.files, key=attrgetter("path"))
-            for f in files:
-                self.write_directory_line(of, path_to_helpers, f.basename + ".html", f.basename,
-                                          f.total_lines, f.executed_lines)
-            self.write_footer(of)
-            of.close()
+            with open(os.path.join(path, "index.html"), "w") as of:
+                self.write_header(of, d.basename, path_to_helpers, d.total_lines, d.executed_lines)
+                self.write_directory_header(of)
+                files = sorted(d.files, key=attrgetter("path"))
+                for f in files:
+                    self.write_directory_line(of, path_to_helpers, f.basename + ".html", f.basename,
+                                              f.total_lines, f.executed_lines)
+                self.write_footer(of)
 
         # Create the files one by one
         for f in self.files:
