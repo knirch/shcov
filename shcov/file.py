@@ -34,19 +34,9 @@ class File:
             m.update(f.read())
 
         st = os.lstat(self.source_path)
-        self.source_file_ctime = st[stat.ST_CTIME]
+        self.ctime = st[stat.ST_CTIME]
 
         self.digest = m.digest()
-
-    def get_source_ctime(self):
-        """Return the creation time of the script"""
-        return self.source_file_ctime
-
-    def set_source_path(self, path):
-        self.source_path = path
-
-    def get_source_path(self):
-        return self.source_path
 
     def save(self, path):
         outfile = open(path, 'wb')
@@ -83,5 +73,5 @@ def load(path, script_base = ''):
     if digest != file.digest:
         file = File(file.path, source_path = script_base + file.path)
 
-    file.set_source_path(script_base + file.path)
+    file.source_path = script_base + file.path
     return file

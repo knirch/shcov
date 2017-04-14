@@ -70,7 +70,7 @@ class ShcovDataOutput:
         return True
 
     def calculate_statistics(self, file):
-        with open(sourcefile.get_source_path()) as f:
+        with open(sourcefile.source_path) as f:
             source_data = f.read()
 
         # OK, this is ugly: Just put these in the object...
@@ -435,7 +435,7 @@ class ShcovDataOutput:
                             continue
                         else:
                             # Not the same, replace and take the newest
-                            if file.get_source_ctime() > other.get_source_ctime():
+                            if file.ctime > other.ctime:
                                 file_objs[file.path] = file
                                 self.files.remove(other)
 
