@@ -17,7 +17,6 @@
 import pickle, os, stat
 
 import hashlib
-from utils import *
 
 
 class File:
@@ -31,7 +30,8 @@ class File:
         self.lines = {}
 
         m = hashlib.md5()
-        m.update(read_file(self.source_path))
+        with open(self.source_path) as f:
+            m.update(f.read())
 
         st = os.lstat(self.source_path)
         self.source_file_ctime = st[stat.ST_CTIME]
@@ -74,11 +74,10 @@ class File:
 
 def load(path, script_base = ''):
     file = pickle.load(open(path))
-    source_file = read_file(script_base + file.path)
-
-    m = hashlib.md5()
-    m.update(source_file)
-    digest = m.digest()
+    with open(script_base + file.path) as f:
+        m = hashlib.md5()
+        m.update(f.read())
+        digest = m.digest()
 
     # File has changed
     if digest != file.digest:

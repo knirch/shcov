@@ -37,8 +37,6 @@ rm -fr %{buildroot}
 %{python_sitelib}/%{name}/__init__.pyc
 %{python_sitelib}/%{name}/file.py
 %{python_sitelib}/%{name}/file.pyc
-%{python_sitelib}/%{name}/utils.py
-%{python_sitelib}/%{name}/utils.pyc
 %{python_sitelib}/%{name}/__init__.pyo
 %{python_sitelib}/%{name}/file.pyo
 %{python_sitelib}/%{name}/utils.pyo

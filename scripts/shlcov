@@ -23,7 +23,6 @@ sys.path =  [base_dir] + sys.path
 
 import shcov
 from shcov.file import File
-from shcov.utils import *
 
 # Regexp to match functions
 fn_regexp = re.compile("\A(function[\t, ]+)*[a-z,A-Z,_]+[a-z,A-Z,_,0-9]*[\t, ]*\([\t, ]*\)[\t, ]*")
@@ -71,7 +70,8 @@ class ShcovDataOutput:
         return True
 
     def calculate_statistics(self, file):
-        source_data = read_file( file.get_source_path() )
+        with open(sourcefile.get_source_path()) as f:
+            source_data = f.read()
 
         # OK, this is ugly: Just put these in the object...
         file.total_lines = 0
@@ -227,7 +227,8 @@ class ShcovDataOutput:
         of = open(os.path.join(path, basename + ".html"), "w")
         path_to_helpers = self.get_relative_path_to_helpers(os.path.abspath(path) )
 
-        source_data = read_file(self.script_base + file.path)
+        with open(self.script_base + sourcefile.path) as f:
+            source_data = f.read()
 
         table="""  <table cellpadding=0 cellspacing=0 border=0>
     <tr>
