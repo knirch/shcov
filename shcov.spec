@@ -35,14 +35,11 @@ rm -fr %{buildroot}
 %{python_sitelib}/%{name}-5-py%{python_version}.egg-info
 %{python_sitelib}/%{name}/__init__.py
 %{python_sitelib}/%{name}/__init__.pyc
-%{python_sitelib}/%{name}/config.py
-%{python_sitelib}/%{name}/config.pyc
 %{python_sitelib}/%{name}/file.py
 %{python_sitelib}/%{name}/file.pyc
 %{python_sitelib}/%{name}/utils.py
 %{python_sitelib}/%{name}/utils.pyc
 %{python_sitelib}/%{name}/__init__.pyo
-%{python_sitelib}/%{name}/config.pyo
 %{python_sitelib}/%{name}/file.pyo
 %{python_sitelib}/%{name}/utils.pyo
 %{_docdir}/%{name}/COPYING

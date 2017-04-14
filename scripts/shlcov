@@ -16,7 +16,7 @@ import os, sys, time, re, getopt, shutil, pkg_resources
 base_dir = os.path.abspath(sys.path[0] + "/../")
 sys.path =  [base_dir] + sys.path
 
-import shcov, shcov.config
+import shcov
 from shcov.file import File
 from shcov.utils import *
 
