@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import pickle
+import cPickle as pickle
 import os
 import stat
 import hashlib
@@ -40,15 +40,13 @@ class File(object):
         self.digest = m.digest()
 
     def save(self, path):
-        outfile = open(path, 'wb')
-
-        pickle.dump(self, outfile)
-        outfile.close()
+        with open(path, 'wb') as outfile:
+            pickle.dump(self, outfile, 2)
 
     def merge_object(self, obj):
         """Merge another object into this """
 
-        for k, v in obj.lines.items():
+        for k, v in obj.lines.iteritems():
             # Add the line numbering from the other
             if k in self.lines:
                 self.lines[k] = self.lines[k] + v
@@ -64,7 +62,9 @@ class File(object):
 
 
 def load(path, script_base=''):
-    sourcefile = pickle.load(open(path))
+    with open(path, 'rb') as p:
+        sourcefile = pickle.load(p)
+
     with open(script_base + sourcefile.path) as f:
         m = hashlib.md5()
         m.update(f.read())
