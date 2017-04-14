@@ -69,13 +69,13 @@ class ShcovDataOutput:
             return False
         return True
 
-    def calculate_statistics(self, file):
+    def calculate_statistics(self, sourcefile):
         with open(sourcefile.source_path) as f:
             source_data = f.read()
 
         # OK, this is ugly: Just put these in the object...
-        file.total_lines = 0
-        file.executed_lines = 0
+        sourcefile.total_lines = 0
+        sourcefile.executed_lines = 0
 
         nr = 1
         previousLineIsContinued = False
@@ -83,9 +83,9 @@ class ShcovDataOutput:
         heredoc_cnt = 0
         for line in source_data.splitlines():
             if self.line_is_code(line):
-                file.total_lines = file.total_lines + 1
-                if file.lines.has_key(nr) or previousLineIsContinued == True:
-                    file.executed_lines = file.executed_lines + 1
+                sourcefile.total_lines = sourcefile.total_lines + 1
+                if sourcefile.lines.has_key(nr) or previousLineIsContinued == True:
+                    sourcefile.executed_lines = sourcefile.executed_lines + 1
 
             if line.endswith("\\"):
                 previousLineIsContinued = True
