@@ -24,7 +24,7 @@ setup(name='%s' % (config.PROGRAM_NAME).lower(),
       author_email="simon.kagstrom@gmail.se",
 
       packages = ['shcov'],
-      scripts = ['scripts/shcov', 'scripts/shlcov'],
+      scripts = ['scripts/shlcov'],
       package_data = {'shcov' : ['data/gcov.css', 'data/*.png']},
 
       data_files = [('share/doc/%s/' % (config.PROGRAM_NAME.lower()), ['README']),
