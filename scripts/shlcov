@@ -89,9 +89,9 @@ class ShcovDataOutput(object):
         heredoc_cnt = 0
         for line in source_data.splitlines():
             if self.line_is_code(line):
-                sourcefile.total_lines = sourcefile.total_lines + 1
+                sourcefile.total_lines += 1
                 if nr in sourcefile.lines or previousLineIsContinued:
-                    sourcefile.executed_lines = sourcefile.executed_lines + 1
+                    sourcefile.executed_lines += 1
 
             if line.endswith("\\"):
                 previousLineIsContinued = True
@@ -111,7 +111,7 @@ class ShcovDataOutput(object):
             else:
                 previousLineIsContinued = False
 
-            nr = nr + 1
+            nr += 1
 
     def get_relative_path_to_helpers(self, path):
         abs_outpath = os.path.abspath(self.outpath)
@@ -274,7 +274,7 @@ class ShcovDataOutput(object):
 
             previousLineIsContinued = line.endswith("\\")
 
-            nr = nr + 1
+            nr += 1
 
             if not previousLineIsContinued:
                 firstLineOfPossibleMultiLineBlock = nr
