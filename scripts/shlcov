@@ -100,10 +100,7 @@ class ShcovDataOutput(object):
                 heredoc_end = heredoc_regexp.match(line).groups()[0]
                 # If the line has been executed, use the same count
                 # for the rest of the here-document.
-                if nr in sourcefile.lines:
-                    heredoc_cnt = sourcefile.lines[nr]
-                else:
-                    heredoc_cnt = 0
+                heredoc_cnt = sourcefile.lines.get(nr, 0)
             elif heredoc_end:
                 # If the initial line was executed, add the rest of the
                 # here-document lines to executed lines.
@@ -355,11 +352,11 @@ class ShcovDataOutput(object):
         for f in self.files:
             dirname = os.path.dirname(f.path)
 
-            try:
+            if dirname in dirs:
                 d = dirs[dirname]
-            except KeyError:
-                d = Dir(dirname)
-                dirs[dirname] = d
+            else:
+                d = dirs[dirname] = Dir(dirname)
+
             d.add_file(f)
 
         total_lines = 0

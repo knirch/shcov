@@ -48,17 +48,11 @@ class File(object):
 
         for k, v in obj.lines.iteritems():
             # Add the line numbering from the other
-            if k in self.lines:
-                self.lines[k] = self.lines[k] + v
-            else:
-                self.lines[k] = v
+            self.lines[k] = self.lines.get(k, 0) + v
 
     def add_to_line(self, line_nr):
         line_nr = int(line_nr)
-        try:
-            self.lines[line_nr] = self.lines[line_nr] + 1
-        except KeyError:
-            self.lines[line_nr] = 1
+        self.lines[line_nr] = self.lines.get(line_nr, 0) + 1
 
 
 def load(path, script_base=''):
