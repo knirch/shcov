@@ -16,6 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from __future__ import print_function
+
 import os
 import sys
 import time
@@ -370,7 +372,7 @@ class ShcovDataOutput(object):
             self.write_header(of, "/", "", total_lines, executed_lines)
 
             if self.info_sum:
-                print "(%.2f%%) covered" % ((float(executed_lines) / float(total_lines)) * 100.0)
+                print("(%.2f%%) covered" % ((float(executed_lines) / float(total_lines)) * 100.0))
 
             self.write_directory_header(of)
 
@@ -437,7 +439,7 @@ class ShcovDataOutput(object):
                     file_objs[f.path] = f
                     self.files.append(f)
                 except Exception:
-                    print "Could not load", path, "ignoring"
+                    print("Could not load", path, "ignoring")
 
         self.handle_files()
 
@@ -449,14 +451,14 @@ class ShcovDataOutput(object):
 
 
 def usage():
-    print """Usage: shlcov [options] datadir outdir
+    print("""Usage: shlcov [options] datadir outdir
 Summary:
     Create HTML output of shcov data in 'datadir' in 'outdir'.
 Options:
     -s --script-base=path     Base path to lookup script source (default: '')
     -l --limit=low,high       Coverage limits (default: 15,50)
     -i --info-summary         Generate info summary on standard output.
-"""
+""")
     sys.exit(1)
 
 
