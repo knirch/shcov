@@ -28,8 +28,44 @@ from __future__ import print_function
 import os
 import cPickle as pickle
 import glob
+import hashlib
+import stat
 
-from shcov.file import File
+
+class CoverageFile(object):
+    def __init__(self, path, source_path=None):
+        self.path = path
+        if source_path is None:
+            self.source_path = path
+        else:
+            self.source_path = source_path
+        self.lines = {}
+
+        with open(self.source_path, 'rb') as f:
+            self.source = f.read()
+
+        m = hashlib.md5()
+        m.update(self.source)
+
+        st = os.lstat(self.source_path)
+        self.ctime = st[stat.ST_CTIME]
+
+        self.digest = m.digest()
+
+    def save(self, path):
+        with open(path, 'wb') as outfile:
+            pickle.dump(self, outfile, 2)
+
+    def merge_object(self, obj):
+        """Merge another object into this """
+
+        for k, v in obj.lines.iteritems():
+            # Add the line numbering from the other
+            self.lines[k] = self.lines.get(k, 0) + v
+
+    def add_to_line(self, line_nr):
+        line_nr = int(line_nr)
+        self.lines[line_nr] = self.lines.get(line_nr, 0) + 1
 
 
 def collect_trace(trace, output, script_base='', purge_parsed_file=False):
@@ -61,7 +97,7 @@ def collect_trace(trace, output, script_base='', purge_parsed_file=False):
                     continue
 
                 if fullpath not in files:
-                    files[fullpath] = File(fullpath, source_path=script_base + fullpath)
+                    files[fullpath] = CoverageFile(fullpath, source_path=script_base + fullpath)
 
                 files[fullpath].add_to_line(line_nr)
 
