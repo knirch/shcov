@@ -7,9 +7,8 @@ import os.path
 import re
 import sys
 import time
+import cPickle as pickle
 from operator import attrgetter
-
-import shcov.file
 
 from lxml.etree import tostring as toxml
 from lxml.builder import E as tag
@@ -48,16 +47,13 @@ class ShcovFileStats(object):
         self.total_lines = 0
         self.executed_lines = 0
         self.sourcefile = sourcefile
-
-        with open(sourcefile.source_path) as s:
-            source_data = s.read()
         self.sourcecode = []
 
         nr = 1
         previousLineIsContinued = False
         heredoc_end = False
         heredoc_cnt = 0
-        for line in source_data.splitlines():
+        for line in sourcefile.source.splitlines():
             if self.line_is_code(line):
                 self.total_lines += 1
                 if nr in sourcefile.lines or previousLineIsContinued:
@@ -196,8 +192,7 @@ span.uncov {
 </html>
 """
 
-    def __init__(self, script_base, data_dir, out_dir):
-        self.script_base = script_base
+    def __init__(self, data_dir, out_dir):
         self.data_dir = data_dir
         self.out_dir = out_dir
         self.files = []
@@ -212,12 +207,10 @@ span.uncov {
         for root, _, files in os.walk(self.data_dir, topdown=False):
             for name in files:
                 path = os.path.join(root, name)
-                try:
-                    sourcefile = shcov.file.load(path, script_base=self.script_base)
-                    self.files.append(sourcefile)
-                    self.file_stats.append(ShcovFileStats(sourcefile))
-                except IOError:
-                    print("IGNORING %s" % path, file=sys.stderr)
+                with open(path, 'rb') as p:
+                    sourcefile = pickle.load(p)
+                self.files.append(sourcefile)
+                self.file_stats.append(ShcovFileStats(sourcefile))
 
         self.file_stats = sorted(self.file_stats, key=attrgetter("sourcefile.path"))
 
@@ -318,7 +311,6 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Create HTML output of shcov data in 'data_directory' in 'output_directory'.")
-    parser.add_argument('--script-base', help='Base path to lookup script source (default: "")', default='')
     parser.add_argument('--limit', help='Coverage limits (default: 15,50)', metavar='low,high')
     parser.add_argument('--format', default="text", help="The output style of the report. (text|flat_html)")
     parser.add_argument('data_directory')
@@ -335,7 +327,7 @@ def main():
     else:
         low_limit, high_limit = 15, 50
 
-    r = ShcovReport(args.script_base, args.data_directory, args.output_directory)
+    r = ShcovReport(args.data_directory, args.output_directory)
     r.process()
 
     # The name of the format is actually a function name to call. So lets look it up and

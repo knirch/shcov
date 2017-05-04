@@ -25,8 +25,8 @@ import re
 import shutil
 import pkg_resources
 from operator import attrgetter
+import cPickle as pickle
 
-import shcov.file
 
 base_dir = os.path.abspath(sys.path[0] + "/../")
 
@@ -40,8 +40,7 @@ heredoc_regexp = re.compile(".*<<-?\'?([a-zA-Z]+)\'?")
 
 
 class ShcovDataOutput(object):
-    def __init__(self, script_base, inpath, outpath, low_limit=15, high_limit=50, info_sum=False):
-        self.script_base = script_base
+    def __init__(self, inpath, outpath, low_limit=15, high_limit=50, info_sum=False):
         self.inpath = inpath
         self.outpath = outpath
 
@@ -77,8 +76,7 @@ class ShcovDataOutput(object):
         return True
 
     def calculate_statistics(self, sourcefile):
-        with open(sourcefile.source_path) as f:
-            source_data = f.read()
+        source_data = sourcefile.source
 
         # OK, this is ugly: Just put these in the object...
         sourcefile.total_lines = 0
@@ -229,8 +227,7 @@ class ShcovDataOutput(object):
         of = open(os.path.join(path, basename + ".html"), "w")
         path_to_helpers = self.get_relative_path_to_helpers(os.path.abspath(path))
 
-        with open(self.script_base + sourcefile.path) as f:
-            source_data = f.read()
+        source_data = sourcefile.source
 
         table = """  <table cellpadding=0 cellspacing=0 border=0>
     <tr>
@@ -415,27 +412,13 @@ class ShcovDataOutput(object):
             os.makedirs(self.outpath)
         except OSError:
             pass
-        file_objs = {}  # Map names to objs
 
         for root, _, files in os.walk(self.inpath, topdown=False):
             for name in files:
                 path = os.path.join(root, name)
                 try:
-                    f = shcov.file.load(path, script_base=self.script_base)
-                    if f.path in file_objs:
-                        other = file_objs[f.path]
-
-                        # If the files are the same, merge them
-                        if f.digest == other.digest:
-                            other.merge_object(f)
-                            continue
-                        else:
-                            # Not the same, replace and take the newest
-                            if f.ctime > other.ctime:
-                                file_objs[f.path] = f
-                                self.files.remove(other)
-
-                    file_objs[f.path] = f
+                    with open(path, 'rb') as p:
+                        f = pickle.load(p)
                     self.files.append(f)
                 except Exception:
                     print("Could not load", path, "ignoring")
@@ -454,7 +437,6 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Create HTML output of shcov data in 'datadir' in 'outdir'.")
-    parser.add_argument('--script-base', help='Base path to lookup script source (default: "")', default='')
     parser.add_argument('--limit', help='Coverage limits (default: 15,50)', metavar='low,high')
     parser.add_argument('--info-summary', action='store_true', help='Generate info summary on standard output.')
     parser.add_argument('datadir')
@@ -471,7 +453,7 @@ def main():
     else:
         low_limit, high_limit = 15, 50
 
-    sc = ShcovDataOutput(args.script_base, args.datadir, args.outdir, low_limit, high_limit, args.info_summary)
+    sc = ShcovDataOutput(args.datadir, args.outdir, low_limit, high_limit, args.info_summary)
     sc.run()
 
 

@@ -30,9 +30,11 @@ class File(object):
         self.basename = os.path.basename(path)
         self.lines = {}
 
+        with open(self.source_path, 'rb') as f:
+            self.source = f.read()
+
         m = hashlib.md5()
-        with open(self.source_path) as f:
-            m.update(f.read())
+        m.update(self.source)
 
         st = os.lstat(self.source_path)
         self.ctime = st[stat.ST_CTIME]
@@ -53,20 +55,3 @@ class File(object):
     def add_to_line(self, line_nr):
         line_nr = int(line_nr)
         self.lines[line_nr] = self.lines.get(line_nr, 0) + 1
-
-
-def load(path, script_base=''):
-    with open(path, 'rb') as p:
-        sourcefile = pickle.load(p)
-
-    with open(script_base + sourcefile.path) as f:
-        m = hashlib.md5()
-        m.update(f.read())
-        digest = m.digest()
-
-    # File has changed
-    if digest != sourcefile.digest:
-        sourcefile = File(sourcefile.path, source_path=script_base + sourcefile.path)
-
-    sourcefile.source_path = script_base + sourcefile.path
-    return sourcefile
