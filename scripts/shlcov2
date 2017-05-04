@@ -143,7 +143,7 @@ table.info th {
   font-weight:      bold;
 }
 
-div.meter {
+div.green_meter, div.red_meter, div.yellow_meter {
   display: block;
   width: 100px;
   height: 10px;
@@ -153,12 +153,25 @@ div.meter {
   background-color: white;
 }
 
-div.meter > div {
+div.green_meter > div,
+div.red_meter > div,
+div.yellow_meter > div {
   display: block;
   height: 10px;
   padding: 0px;
   margin: 0px;
+}
+
+div.red_meter > div {
+  background-color: red;
+}
+
+div.green_meter > div {
   background-color: green;
+}
+
+div.yellow_meter > div {
+  background-color: yellow;
 }
 
 span.lineno {
@@ -217,7 +230,7 @@ span.uncov {
             for filestats in self.file_stats:
                 f.write("%s %f\n" % (filestats.sourcefile.path, (float(filestats.executed_lines) / float(filestats.total_lines)) * 100))
 
-    def flat_html(self):
+    def flat_html(self, low_limit=15, high_limit=50):
         # Create the main index.html file with a listing of all the files.
         with open(os.path.join(self.out_dir, "index.html"), "w+") as f:
             f.write(ShcovReport.html_start)
@@ -242,10 +255,16 @@ span.uncov {
             for filestats in self.file_stats:
                 coverage = (float(filestats.executed_lines) / float(filestats.total_lines)) * 100
                 filename = filestats.sourcefile.path.replace("/", "_") + ".html"
+                if coverage > high_limit:
+                    meter = 'green_meter'
+                elif coverage > low_limit:
+                    meter = 'yellow_meter'
+                else:
+                    meter = 'red_meter'
                 tbody.append(
                     tag.tr(
                         tag.td(tag.a(filestats.sourcefile.path, href=filename)),
-                        tag.td(tag.div(tag.div(style="width: %dpx;" % coverage), {"class": "meter"})),
+                        tag.td(tag.div(tag.div(style="width: %dpx;" % coverage), {"class": meter})),
                         tag.td("%.1f%%" % coverage),
                         tag.td("%d/%d lines" % (filestats.executed_lines, filestats.total_lines))))
 
@@ -300,12 +319,21 @@ def main():
 
     parser = argparse.ArgumentParser(description="Create HTML output of shcov data in 'data_directory' in 'output_directory'.")
     parser.add_argument('--script-base', help='Base path to lookup script source (default: "")', default='')
-    # parser.add_argument('--limit', help='Coverage limits (default: 15,50)', metavar='low,high')
+    parser.add_argument('--limit', help='Coverage limits (default: 15,50)', metavar='low,high')
     parser.add_argument('--format', default="text", help="The output style of the report. (text|flat_html)")
     parser.add_argument('data_directory')
     parser.add_argument('output_directory')
 
     args = parser.parse_args()
+
+    if args.limit:
+        try:
+            low_limit, high_limit = args.limit.split(',')
+            low_limit, high_limit = int(low_limit), int(high_limit)
+        except ValueError:
+            parser.error("Invalid limits")
+    else:
+        low_limit, high_limit = 15, 50
 
     r = ShcovReport(args.script_base, args.data_directory, args.output_directory)
     r.process()
@@ -315,7 +343,7 @@ def main():
     if not hasattr(r, args.format):
         print("Invalid format", file=sys.stderr)
         sys.exit(1)
-    getattr(r, args.format)()
+    getattr(r, args.format)(low_limit=low_limit, high_limit=high_limit)
 
 
 if __name__ == "__main__":
