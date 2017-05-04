@@ -62,7 +62,11 @@ class ShcovFileStats(object):
                 else:
                     self.sourcecode.append((ShcovFileStats.LINE_UNCOV, line))
             else:
-                self.sourcecode.append((ShcovFileStats.LINE_NOCODE, line))
+                if nr in sourcefile.lines or previousLineIsContinued:
+                    self.executed_lines += 1
+                    self.sourcecode.append((ShcovFileStats.LINE_COV, line))
+                else:
+                    self.sourcecode.append((ShcovFileStats.LINE_NOCODE, line))
 
             if line.endswith("\\"):
                 previousLineIsContinued = True
