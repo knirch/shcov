@@ -27,7 +27,6 @@ class File(object):
             self.source_path = path
         else:
             self.source_path = source_path
-        self.basename = os.path.basename(path)
         self.lines = {}
 
         with open(self.source_path, 'rb') as f:

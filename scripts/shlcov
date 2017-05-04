@@ -399,7 +399,7 @@ class ShcovDataOutput(object):
                 self.write_directory_header(of)
                 files = sorted(d.files, key=attrgetter("path"))
                 for f in files:
-                    self.write_directory_line(of, path_to_helpers, f.basename + ".html", f.basename,
+                    self.write_directory_line(of, path_to_helpers, os.path.basename(f.path) + ".html", os.path.basename(f.path),
                                               f.total_lines, f.executed_lines)
                 self.write_footer(of)
 
